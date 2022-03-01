@@ -1,0 +1,64 @@
+import argparse
+import urllib.request
+import logging
+import datetime
+import csv
+
+#url = 'https://s3.amazonaws.com/cuny-is211-spring2015/birthdays100.csv'
+
+def downloadData(url):
+    with urllib.request.urlopen(url) as f:
+        return f.read().decode('utf-8')
+
+def processData(file_content):
+    data_dict = {}
+    file_reader = csv.reader(file_content)
+    next(file_content)
+    for linenum, person in enumerate(file_content):
+        try:
+            id_list = int(person[0])
+            name_list = person[1]
+            bd_list = datetime.datetime.strptime(person[2], "%d,%m,%Y")
+            data_dict[id_list] = (name_list, bd_list)
+        except:
+            error_msg = f"Error processing line #{linenum} for ID #{id_list}."
+            logger = logging.getLogger("assignment2")
+            logging.basicConfig(filename="ERROR.log", level=logging.ERROR)
+            logger.error(error_msg)
+    return data_dict
+
+
+def displayPerson(id, personData):
+    if id == None:
+        print("No user found with that id")
+    else: 
+        print(f"Person {id} is " + personData[id][0] + " with a birthday of " + datetime.datetime.strftime(personData[id][1], "%Y-%m-%d"))
+
+def main(url):
+    print(f"Running main with URL = {url}...")
+
+    try:
+        url_store = downloadData(url)
+    except:
+        print("Cannot continue downloading from URL.")
+        exit()
+
+    data_dict = processData(url_store)
+
+    user_input = int(input("Please, enter an ID to lookup: \n"))
+    while id < 0:
+        displayPerson(user_input, data_dict)
+        cont_ask = int(input("Do you wish to continue? Enter 1 for yes, enter 2 for no. \n"))
+
+        if cont_ask == 1:
+            user_input = int(input("Please, enter an ID to lookup: \n"))
+        else:
+            break
+
+
+if __name__ == "__main__":
+    """Main entry point"""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--url", help="URL to the datafile", type=str, required=True)
+    args = parser.parse_args()
+    main(args.url)
